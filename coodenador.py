@@ -5,67 +5,51 @@ import time
 waiting_list = []
 lock = threading.Lock()
 
-def interface():
-    while True:
-        with lock:
-            if not waiting_list:
-                print("Waiting List: Empty")
-            else:
-                print("Waiting List:")
-                print(*waiting_list, sep='\n')
-        time.sleep(1)
+# def interface():
+#     while True:
+#         with lock:
+#             if not waiting_list:
+#                 print("Waiting List: Empty")
+#             else:
+#                 print("Waiting List:")
+#                 print(*waiting_list, sep='\n')
+#         time.sleep(1)
+
 
 def coordenador(c, addr):
-    try:    
-        # threading.Thread(target=interface).start()
+    while True:
+        decoded_data = c.recv(1024).decode('ascii')
 
-        data = c.recv(1024)
+        with lock:
+            if decoded_data == 'REQUEST':
+                waiting_list.append((c, addr))
+                print(waiting_list)
 
-        if not data:
-            with lock:
-                print(f'{addr[0]}:{addr[1]} disconnected')              
+                if waiting_list[0] == (c, addr):
+                    next_c, next_addr = waiting_list[0]
+                    next_c.send('GRANT'.encode('ascii'))
 
-        decoded_data = data.decode('ascii')
+            if decoded_data == 'RELEASE':
+                waiting_list.pop(0)
+        break
 
-        waiting_list.append(f'{addr[0]}:{addr[1]}')
-
-        # if decoded_data == 'REQUEST':
-        #     with lock:
-        #         if not waiting_list:
-        #             c.send('GRANT'.encode('ascii'))
-        #             waiting_list.append(f'{addr[0]}:{addr[1]}')
-        #         else:
-        #             c.send('WAIT'.encode('ascii'))
-
-        # if decoded_data == 'RELEASE':
-        #     with lock:
-        #         if f'{addr[0]}:{addr[1]}' in waiting_list:
-        #             waiting_list.remove(f'{addr[0]}:{addr[1]}')
-
-
-
-        for i in range(len(waiting_list)):
-            print(f'{i + 1} - {waiting_list[i]}')
-
-    finally:
-        c.close()
 
 def main():
     host = '127.0.0.1'
-    port = 3000
+    port = 5000
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, port))
 
+    s.bind((host, port))
     s.listen()
 
     print('Server is listening...')
 
     while True:
         c, addr = s.accept()
-        print('Connection from: ' + str(addr))
 
         threading.Thread(target=coordenador, args=(c, addr)).start()
+
 
 if __name__ == '__main__':
     threading.Thread(target=main).start()
