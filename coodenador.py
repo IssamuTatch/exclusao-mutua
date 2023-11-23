@@ -11,13 +11,16 @@ def coordenador(c, addr):
             decoded_data = c.recv(1024).decode('ascii')
 
             if decoded_data == 'REQUEST':
+                print('REQUEST')
                 waiting_list.append((c, addr))
 
                 if waiting_list[0] == (c, addr):
                     next_c, next_addr = waiting_list[0]
+                    print('GRANT')
                     next_c.send('GRANT'.encode('ascii'))
 
             if decoded_data == 'RELEASE':
+                print('RELEASE')
                 waiting_list.pop(0)
 
                 if waiting_list:

@@ -15,9 +15,7 @@ def processo():
 
     print('Connected to Server')
 
-    for _ in range(10):
-        now = str(datetime.datetime.now())
-
+    for _ in range(3):
         s.send('REQUEST'.encode('ascii'))
 
         grant_signal = s.recv(1024).decode('ascii')
@@ -25,10 +23,11 @@ def processo():
         if grant_signal == 'GRANT':
             with lock:
                 with open('resultado.txt', 'a') as file:
+                    now = str(datetime.datetime.now())
                     file.write(now + '|' + str(s.getsockname()) + '\n')
-                time.sleep(1)
 
             s.send('RELEASE'.encode('ascii'))
+            time.sleep(1)
 
     s.close()
 
